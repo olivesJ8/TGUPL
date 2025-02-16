@@ -85,6 +85,10 @@ async def upload_file(client, chat_id, file_path, msg, as_document=False, thumb=
         await msg.edit_text(f"✅ **Upload Complete!**\n📂 `{file_name}`\n📏 Size: {naturalsize(file_size)}")
 
         return media
+    except Exception as e:
+        await msg.edit_text(f"Err on sending file : {e}")
+        return
+        
     finally:
         # Delete file and thumbnail after upload
         try:
@@ -94,5 +98,5 @@ async def upload_file(client, chat_id, file_path, msg, as_document=False, thumb=
         except Exception as e:
             print(f"File Deletion Error: {e}")
             lg.info(f"File Deletion Error: {e}")
-
+            return
       
