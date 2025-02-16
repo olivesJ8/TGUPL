@@ -63,6 +63,7 @@ async def get_file_info(url):
                 file_type = get_file_type(content_type)
                 if is_m3u8:
                     file_type = "video"
+                    filename = filename.replace(".m3u8",".mp4")
                 return {
                     "url": url,
                     "filename": filename,
