@@ -72,7 +72,7 @@ async def upload_file(client, chat_id, file_path, msg, as_document=False, thumb=
             )
         elif is_audio:
             media = await client.send_audio(
-                chat_id, file_path, thumb=thumb, duration=duration, caption=file_name, progress=progress_func
+                chat_id, file_path, duration=duration, caption=file_name, progress=progress_func
             )
         elif is_image:
             media = await client.send_photo(chat_id, file_path, caption=file_name, progress=progress_func)
