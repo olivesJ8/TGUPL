@@ -75,7 +75,7 @@ async def get_file_info(url):
 
 
 # Function to download a file with progress tracking
-async def download_file(url, filename=None, msg, chunk_size=1024 * 1024):
+async def download_file(url, msg, filename=None, chunk_size=1024 * 1024):
     file_info = await get_file_info(url)
     if "error" in file_info:
         print(f"Error: {file_info['error']}")
@@ -112,7 +112,7 @@ async def download_file(url, filename=None, msg, chunk_size=1024 * 1024):
                             elapsed_time = time.time() - start_time
                             speed = downloaded / elapsed_time if elapsed_time > 0 else 0
                              
-                            await print_progress(filename=filename, downloaded=downloaded, total_size=None, speed=speed, eta=None, msg=msg, st=start_time)
+                            await print_progress(filename=filename, downloaded=downloaded, total_size=None, speed=speed, eta=None, st=start_time, msg=msg)
                         print(f"\nDownload complete: {file_path}")
                         await msg.edit_text(f"Download complete: {file_path}")
                         return
@@ -132,7 +132,7 @@ async def download_file(url, filename=None, msg, chunk_size=1024 * 1024):
 
                             # Print progress
                             progress.update(len(chunk))
-                            await print_progress(filename, downloaded, file_size, speed, eta, msg=msg, st=start_time)
+                            await print_progress(filename, downloaded, file_size, speed, eta, st=start_time, msg=msg)
 
         except Exception as e:
             print(f"Download failed: {str(e)}")
@@ -143,7 +143,7 @@ async def download_file(url, filename=None, msg, chunk_size=1024 * 1024):
     await msg.edit_text(f"Download complete: {file_path}")
 
 # Function to download M3U8 streams using FFmpeg and show progress
-async def download_m3u8(url, filename, msg):
+async def download_m3u8(url, msg, filename):
     filename = os.path.join(dldir, filename)  # Save in the specified directory
     print(f"Downloading M3U8 stream: {url} -> {filename}")
     await msg.edit_text(f"Downloading M3U8 stream: {url} -> {filename}")
@@ -182,7 +182,7 @@ async def download_m3u8(url, filename, msg):
         await msg.edit_text(f"Error downloading M3U8: {str(e)}")
 
 #handled m3u8 dl
-async def download_m3u8_2(url, filename, msg):
+async def download_m3u8_2(url, msg, filename):
     filename = os.path.join(dldir, filename)  # Save in the specified directory
     print(f"Downloading M3U8 stream: {url} -> {filename}")
     await msg.edit_text(f"Downloading M3U8 stream: {url} -> {filename}")
@@ -205,7 +205,7 @@ async def download_m3u8_2(url, filename, msg):
                 downloaded += 1024 * 1024  # Simulating 1MB per log update
 
                 speed = downloaded / elapsed_time if elapsed_time > 0 else 0
-                await print_progress(filename, downloaded, None, speed, elapsed_time, msg=msg, st=start_time)
+                await print_progress(filename, downloaded, None, speed, elapsed_time, st=start_time, msg=msg)
         
         # Wait for the process to finish
         await process.wait()
@@ -225,7 +225,7 @@ async def download_m3u8_2(url, filename, msg):
 last_msg=""
 last_t=0
 # Function to print progress updates
-async def print_progress(filename, downloaded, total_size, speed, eta, msg=None, st):
+async def print_progress(filename, downloaded, total_size, speed, eta, st, msg=None):
     eta_str = f"{int(eta)}s" if eta else "Unknown"
     percent_done = f"{(downloaded / total_size) * 100:.2f}%" if total_size else "Unknown"
     speed_str = format_size(speed) + "/s" if speed else "Unknown"
@@ -257,10 +257,10 @@ async def dl(url, msg, custom_filename=None):
     try:
         if file_info["is_m3u8"]:
             # Call download_m3u8 function
-            await download_m3u8(url, filename, msg=msg)
+            await download_m3u8(url, msg=msg, filename=filename)
         else:
             # Call download_file function
-            await download_file(url, filename, msg=msg)
+            await download_file(url, msg=msg, filename=filename)
 
         return {"filename": filename, "file_path": file_path}
     
