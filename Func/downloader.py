@@ -230,11 +230,22 @@ async def dl(url, msg, custom_filename=None):
     if "error" in file_info:
         print(f"Error: {file_info['error']}")
         await msg.edit_text(f"Err getting file data: {file_info['error']}")
-        return
+        return {"error": file_info["error"]}
 
     filename = custom_filename if custom_filename else file_info["filename"]
+    file_path = os.path.join(dldir, filename)
 
-    if file_info["is_m3u8"]:
-        download_m3u8(url, filename, msg=msg)
-    else:
-        await download_file(url, filename, msg=msg)
+    try:
+        if file_info["is_m3u8"]:
+            # Call download_m3u8 function
+            await download_m3u8(url, filename, msg=msg)
+        else:
+            # Call download_file function
+            await download_file(url, filename, msg=msg)
+
+        return {"filename": filename, "file_path": file_path}
+    
+    except Exception as e:
+        print(f"Error during download: {str(e)}")
+        await msg.edit_text(f"Error: {str(e)}")
+        return {"error": str(e)}
