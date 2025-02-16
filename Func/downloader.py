@@ -80,7 +80,7 @@ async def download_file(url, msg, filename=None, chunk_size=1024 * 1024):
     if "error" in file_info:
         print(f"Error: {file_info['error']}")
         await msg.edit_text(f"Err getting file data: {file_info['error']}")
-        return
+        return {"error":file_info['error']}
 
     filename = filename or file_info["filename"]
     file_size = file_info["file_size"]
@@ -137,19 +137,21 @@ async def download_file(url, msg, filename=None, chunk_size=1024 * 1024):
         except Exception as e:
             print(f"Download failed: {str(e)}")
             await msg.edit_text(f"Download failed: {str(e)}")
-            return
+            return {"error": f"ERR on download : {str(e)}"}
 
     print(f"\nDownload complete: {file_path}")
     await msg.edit_text(f"Download complete: {file_path}")
+    return {"ok":f"{file_path}"}
 
 # Function to download M3U8 streams using FFmpeg and show progress
 async def download_m3u8(url, msg, filename):
     filename = os.path.join(dldir, filename)  # Save in the specified directory
     print(f"Downloading M3U8 stream: {url} -> {filename}")
     await msg.edit_text(f"Downloading M3U8 stream: {url} -> {filename}")
-    
+    file_path = os.path.join(dldir, filename)
+
     command = [
-        "ffmpeg", "-i", url, "-c", "copy", "-bsf:a", "aac_adtstoasc", filename
+        "ffmpeg", "-i", url, "-c", "copy", "-bsf:a", "aac_adtstoasc", file_path
     ]
 
     try:
@@ -173,22 +175,28 @@ async def download_m3u8(url, msg, filename):
         if process.returncode != 0:
             print(f"Error: FFmpeg failed to download M3U8 stream.")
             await msg.edit_text(f"Error: FFmpeg failed to download M3U8 stream.")
+            return {"error": f"ERR on ffmpeg download m3u8."}
+            
         else:
             print(f"\nM3U8 Download complete: {filename}")
             await msg.edit_text(f"\nM3U8 Download complete: {filename}")
-
+            return {"ok":f"{file_path}"}
     except Exception as e:
         print(f"Error downloading M3U8: {str(e)}")
         await msg.edit_text(f"Error downloading M3U8: {str(e)}")
+        return {"error": f"ERR on download m3u8 : {str(e)}"}
+
 
 #handled m3u8 dl
 async def download_m3u8_2(url, msg, filename):
     filename = os.path.join(dldir, filename)  # Save in the specified directory
     print(f"Downloading M3U8 stream: {url} -> {filename}")
     await msg.edit_text(f"Downloading M3U8 stream: {url} -> {filename}")
+    file_path = os.path.join(dldir, filename)
+
     
     command = [
-        "ffmpeg", "-i", url, "-c", "copy", "-bsf:a", "aac_adtstoasc", filename
+        "ffmpeg", "-i", url, "-c", "copy", "-bsf:a", "aac_adtstoasc", file_path
     ]
 
     try:
@@ -213,19 +221,24 @@ async def download_m3u8_2(url, msg, filename):
         if process.returncode != 0:
             print(f"Error: FFmpeg failed to download M3U8 stream.")
             await msg.edit_text(f"Error: FFmpeg failed to download M3U8 stream.")
+            return {"error": f"ERR on ffmpeg download m3u8."}
+
         else:
             print(f"\nM3U8 Download complete: {filename}")
             await msg.edit_text(f"\nM3U8 Download complete: {filename}")
-
+            return {"ok":f"{file_path}"}
+    
     except Exception as e:
         print(f"Error downloading M3U8: {str(e)}")
         await msg.edit_text(f"Error downloading M3U8: {str(e)}")
+        return {"error": f"ERR on download m3u8: {str(e)}"}
 
 
 last_msg=""
 last_t=0
 # Function to print progress updates
 async def print_progress(filename, downloaded, total_size, speed, eta, st, msg=None):
+    global last_msg, last_t
     eta_str = f"{int(eta)}s" if eta else "Unknown"
     percent_done = f"{(downloaded / total_size) * 100:.2f}%" if total_size else "Unknown"
     speed_str = format_size(speed) + "/s" if speed else "Unknown"
@@ -256,12 +269,14 @@ async def dl(url, msg, custom_filename=None):
     try:
         if file_info["is_m3u8"]:
             # Call download_m3u8 function
-            await download_m3u8(url, msg=msg, filename=filename)
+            dlf=await download_m3u8(url, msg=msg, filename=filename)
         else:
             # Call download_file function
-            await download_file(url, msg=msg, filename=filename)
-
-        return {"filename": filename, "file_path": file_path}
+            dlf=await download_file(url, msg=msg, filename=filename)
+        if not "error" in dlf:
+            return {"filename": filename, "file_path": file_path}
+        else:
+            return {"error": dlf['error']}
     
     except Exception as e:
         print(f"Error during download: {str(e)}")
