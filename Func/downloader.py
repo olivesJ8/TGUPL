@@ -233,7 +233,6 @@ async def print_progress(filename, downloaded, total_size, speed, eta, st, msg=N
     total_size_str = format_size(total_size) if total_size else "Unknown"
 
     print(f"\r{filename}: {size_done}/{total_size_str} ({percent_done}) at {speed_str}, ETA: {eta_str}", end="", flush=True)
-    etime = time.time() - start_time
     if msg:
         if last_t == 0 or time.time() - last_t >= 10:
             new_msg = f"**Downloading...**\n\nName : {filename}\nDone : {size_done}/{total_size_str}\nP : {percent_done}\nSpeed : {speed_str}\nETA: {eta_str}"
