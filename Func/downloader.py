@@ -226,6 +226,7 @@ last_msg=""
 last_t=0
 # Function to print progress updates
 async def print_progress(filename, downloaded, total_size, speed, eta, st, msg=None):
+    global last_msg, last_t
     eta_str = f"{int(eta)}s" if eta else "Unknown"
     percent_done = f"{(downloaded / total_size) * 100:.2f}%" if total_size else "Unknown"
     speed_str = format_size(speed) + "/s" if speed else "Unknown"
