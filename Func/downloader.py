@@ -17,7 +17,20 @@ os.makedirs(dldir, exist_ok=True)
 def format_size(size):
     return humanize.naturalsize(size, binary=True)
 
-# Function to get file info (checks if M3U8, gets filename & size)
+# Function to determine file type from MIME type
+def get_file_type(mime_type):
+    if mime_type.startswith("video/"):
+        return "video"
+    elif mime_type.startswith("audio/"):
+        return "audio"
+    elif mime_type.startswith("image/"):
+        return "image"
+    elif mime_type.startswith("application/") or mime_type.startswith("text/"):
+        return "document"
+    else:
+        return "unknown"
+
+# Function to get file info (checks if M3U8, gets filename, size, and type)
 async def get_file_info(url):
     async with aiohttp.ClientSession() as session:
         try:
@@ -42,18 +55,24 @@ async def get_file_info(url):
                     filename = os.path.basename(urlparse(url).path)
 
                 # If filename is missing, generate one
+                extension = "mp4" if is_m3u8 else "bin"
                 if not filename:
-                    extension = "mp4" if is_m3u8 else "bin"
                     filename = f"file_{int(time.time())}.{extension}"
 
+                # Determine file type
+                file_type = get_file_type(content_type)
+                if is_m3u8:
+                    file_type = "video"
                 return {
                     "url": url,
                     "filename": filename,
                     "file_size": file_size,
-                    "is_m3u8": is_m3u8
+                    "is_m3u8": is_m3u8,
+                    "file_type": file_type
                 }
         except Exception as e:
             return {"error": str(e)}
+
 
 # Function to download a file with progress tracking
 async def download_file(url, filename=None, msg, chunk_size=1024 * 1024):
