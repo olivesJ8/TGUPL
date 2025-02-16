@@ -143,49 +143,52 @@ async def download_file(url, msg, filename=None, chunk_size=1024 * 1024):
     await msg.edit_text(f"Download complete: {file_path}")
     return {"ok":f"{file_path}"}
 
-# Function to download M3U8 streams using FFmpeg and show progress
 async def download_m3u8(url, msg, filename):
     filename = os.path.join(dldir, filename)  # Save in the specified directory
     print(f"Downloading M3U8 stream: {url} -> {filename}")
     await msg.edit_text(f"Downloading M3U8 stream: {url} -> {filename}")
-    file_path = os.path.join(dldir, filename)
 
     command = [
-        "ffmpeg", "-i", url, "-c", "copy", "-bsf:a", "aac_adtstoasc", file_path
+        "ffmpeg", "-i", url, "-c", "copy", "-bsf:a", "aac_adtstoasc", filename
     ]
 
     try:
-        # Start process and capture real-time logs
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        # Use asyncio subprocess for non-blocking execution
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True  # Use text=True if Python 3.8+
+        )
 
         start_time = time.time()
         downloaded = 0
 
-        for line in process.stdout:
-            # Extract progress from FFmpeg logs
-            if "time=" in line:
+        async for line in process.stderr:
+            line = line.strip()
+            if "time=" in line:  # Extract progress from FFmpeg logs
                 elapsed_time = time.time() - start_time
-                downloaded += 1024 * 1024  # Simulating 1MB per log update
+                downloaded += 1024 * 1024  # Simulate 1MB per log update
 
                 speed = downloaded / elapsed_time if elapsed_time > 0 else 0
                 await print_progress(filename, downloaded, None, speed, elapsed_time, msg=msg, st=start_time)
-        
-        process.wait()
-        
+
+        # Wait for FFmpeg to finish
+        await process.wait()
+
         if process.returncode != 0:
-            print(f"Error: FFmpeg failed to download M3U8 stream.")
-            await msg.edit_text(f"Error: FFmpeg failed to download M3U8 stream.")
-            return {"error": f"ERR on ffmpeg download m3u8."}
-            
-        else:
-            print(f"\nM3U8 Download complete: {filename}")
-            await msg.edit_text(f"\nM3U8 Download complete: {filename}")
-            return {"ok":f"{file_path}"}
+            print("Error: FFmpeg failed to download M3U8 stream.")
+            await msg.edit_text("Error: FFmpeg failed to download M3U8 stream.")
+            return {"error": "FFmpeg download failed."}
+        
+        print(f"M3U8 Download complete: {filename}")
+        await msg.edit_text(f"M3U8 Download complete: {filename}")
+        return {"ok": filename}
+
     except Exception as e:
         print(f"Error downloading M3U8: {str(e)}")
         await msg.edit_text(f"Error downloading M3U8: {str(e)}")
-        return {"error": f"ERR on download m3u8 : {str(e)}"}
-
+        return {"error": f"Error during M3U8 download: {str(e)}"}
 
 #handled m3u8 dl
 async def download_m3u8_2(url, msg, filename):
@@ -201,7 +204,7 @@ async def download_m3u8_2(url, msg, filename):
 
     try:
         # Use asyncio for non-blocking process management
-        process = await asyncio.create_subprocess_exec(*command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        process = await asyncio.create_subprocess_exec(*command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         start_time = time.time()
         downloaded = 0
@@ -269,7 +272,7 @@ async def dl(url, msg, custom_filename=None):
     try:
         if file_info["is_m3u8"]:
             # Call download_m3u8 function
-            dlf=await download_m3u8_2(url, msg=msg, filename=filename)
+            dlf=await download_m3u8(url, msg=msg, filename=filename)
         else:
             # Call download_file function
             dlf=await download_file(url, msg=msg, filename=filename)
