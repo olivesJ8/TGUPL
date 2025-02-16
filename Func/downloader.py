@@ -269,7 +269,7 @@ async def dl(url, msg, custom_filename=None):
     try:
         if file_info["is_m3u8"]:
             # Call download_m3u8 function
-            dlf=await download_m3u8(url, msg=msg, filename=filename)
+            dlf=await download_m3u8_2(url, msg=msg, filename=filename)
         else:
             # Call download_file function
             dlf=await download_file(url, msg=msg, filename=filename)
