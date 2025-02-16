@@ -4,7 +4,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from plugins.authers import is_authorized
 from Func.downloader import dl
-
+from Func.utils import mention_user, generate_thumbnail, get_tg_filename
 
   
 
@@ -21,6 +21,10 @@ async def handle_link(client, message):
       return
   stT = f"🛠**Processing...**"
   msg = await message.reply(stT)
-  await dl(url=link, msg=msg, custom_filename=newName)
+  dl_file = await dl(url=link, msg=msg, custom_filename=newName)
+  if dl_file and not "error" in dl_file:
+    
+  else:
+    return
   
   
